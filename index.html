@@ -279,6 +279,7 @@
                         </label>
                     </div>
                 </div>
+
                 <div id="data-error-msg" style="color: var(--danger-red); font-weight:600; font-size: 0.9rem; margin-top: 15px; display: none;">⚠️ Por favor completa todos tus datos y elige el envío.</div>
             </div>
 
@@ -356,6 +357,15 @@
         const WA_NUMBER = "5491153196358";
         const ADMIN_PASS = "Brown2025";
         const MAX_DISCOUNT_CAP = 3000; 
+
+        // LISTA DE TEMAS (Checklist)
+        const COVER_THEMES = [
+            "Artística", "Biología", "Cine", "Contable", "Danza", 
+            "Ed. Física", "Física", "Galeano", "Geografía", "Historia", 
+            "Inglés", "Literatura", "Madres de la Plaza", "Mandalas", 
+            "Matemática", "Mujeres de la Ciencia", "Música", "Ni una Menos", 
+            "Paisajes", "Papa Francisco", "Química", "Retro"
+        ].sort();
 
         let CATALOG = { profesores: [], maestros: [], temas: [], digital: [], libreria: [], adicionales: [], cupones: [] };
         let cart = [];
@@ -455,12 +465,18 @@
             else if (type === 'digital') html += createSelect("1. Formato Digital", "base", CATALOG.digital);
 
             if (type !== 'digital') {
-                html += `<div class="form-group">
-                            <div class="section-title">2. ¿Qué diseño de tapa querés? <span style="color:var(--danger-red)">*</span></div>
-                            <input type="text" id="input-tema" placeholder="Escribí el nombre (ej: BIOLOGÍA 1)..." oninput="updateTotal()">
-                         </div>`;
+                // SECCION DE TEMA (MODIFICADA: Ahora es un Select)
+                let themesOptions = COVER_THEMES.map(t => `<option value="${t}" data-price="0">${t}</option>`).join('');
                 
-                html += `<a href="https://wa.me/c/5491153196358" target="_blank" style="display:block; width:100%; padding:12px; background:#eef6fc; color:#1A3B5C; text-align:center; border-radius:12px; font-weight:700; text-decoration:none; margin-bottom:20px; margin-top:10px; border: 1px solid #dcebf7;">🎨 Ver Catálogo de portadas</a>`;
+                html += `<div class="form-group">
+                            <div class="section-title">2. Elegí el tema de la portada <span style="color:var(--danger-red)">*</span></div>
+                            <div class="select-wrapper">
+                                <select id="input-tema" onchange="updateTotal()">
+                                    <option value="" disabled selected>Selecciona una opción...</option>
+                                    ${themesOptions}
+                                </select>
+                            </div>
+                         </div>`;
 
                 let digitalOpts = [{name: "No agregar versión digital", price: 0}, ...CATALOG.digital];
                 html += createSelect("3. ¿Sumar Versión Digital?", "digital_addon", digitalOpts, "No agregar versión digital");
@@ -526,12 +542,6 @@
                 if (sel.value === "") errors.push("Falta seleccionar opción");
             });
 
-            // Validar Input texto de diseño si existe
-            const temaInput = document.getElementById('input-tema');
-            if (temaInput && temaInput.value.trim() === "") {
-                errors.push("Falta escribir el diseño");
-            }
-
             if(document.getElementById('group-lib') && document.querySelectorAll('#group-lib input:checked').length === 0) errors.push("Elige librería");
             if(document.getElementById('group-add') && document.querySelectorAll('#group-add input:checked').length === 0) errors.push("Elige adicionales");
 
@@ -560,8 +570,10 @@
             let details = [];
             let total = 0;
             
-            // Grabar Selects
+            // Grabar Selects (Excluyendo el tema para darle formato especial)
             document.querySelectorAll('select').forEach(sel => {
+                if(sel.id === 'input-tema') return; 
+
                 const name = sel.value;
                 const price = parseInt(sel.options[sel.selectedIndex].dataset.price);
                 if(name && name !== "No agregar versión digital") {
@@ -570,10 +582,10 @@
                 }
             });
 
-            // Grabar Input Texto Diseño
+            // Grabar TEMA (Select especial)
             const temaInput = document.getElementById('input-tema');
-            if (temaInput && temaInput.value.trim() !== "") {
-                details.push(`Diseño: ${temaInput.value.trim()}`);
+            if (temaInput && temaInput.value) {
+                details.push(`Diseño: ${temaInput.value}`);
             }
 
             // Grabar Checkboxes
@@ -702,7 +714,6 @@
             const clientCover = document.getElementById('client-cover-name').value.trim();
             const clientDni = document.getElementById('client-dni').value.trim();
             
-            // LOGICA NUEVA PARA DETECTAR ENVIO
             const deliveryEnvio = document.getElementById('del-envio');
             const deliveryPresencial = document.getElementById('del-presencial');
             const errorMsg = document.getElementById('data-error-msg');
@@ -721,7 +732,6 @@
             text += `DNI: ${clientDni}\n`;
             text += `Nombre en Tapa: ${clientCover}\n`;
             
-            // AGREGAR INFO DE ENTREGA AL MENSAJE
             let deliveryText = deliveryEnvio.checked ? "Envío (A cargo del comprador)" : "Entrega Presencial (Gratis en Alte. Brown)";
             text += `Entrega: ${deliveryText}\n`;
             
